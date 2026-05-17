@@ -1,0 +1,25 @@
+{
+  "name": "PulseCheck Parliament",
+  "short_name": "PulseCheck",
+  "description": "Semi-circle parliament seat visualizer with support/oppose/neutral counts",
+  "start_url": "/parliament/",
+  "scope": "/parliament/",
+  "display": "standalone",
+  "theme_color": "#FDFBFF",
+  "background_color": "#FDFBFF",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/parliament/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/parliament/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
