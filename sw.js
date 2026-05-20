@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pulse-check-v1';
+const CACHE_NAME = 'pulse-check-v1.0.1';
 const urlsToCache = [
   '/parliament/',
   '/parliament/index.html',
