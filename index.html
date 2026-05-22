@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Pulse Check · Parliament</title>
   <!--
     Hemicycle layout algorithm ported from:
@@ -33,10 +33,17 @@
       <button class="btn-add" data-category="support">+ Add reason</button>
       <!-- 内联表单（默认隐藏） -->
       <div class="reason-form" id="form-support" hidden>
-        <input class="reason-text" type="text" placeholder="Reason…" maxlength="120" />
-        <input class="reason-score" type="number" min="1" placeholder="Score" />
-        <button class="btn-confirm">✓</button>
-        <button class="btn-cancel">✗</button>
+        <div class="reason-input-area">
+          <div class="reason-input-stack">
+            <input class="reason-text" type="text" placeholder="Reason…" maxlength="120" />
+            <input class="reason-score" type="number" min="1" placeholder="Score" />
+          </div>
+          <button class="btn-next" aria-label="下一步">→</button>
+        </div>
+        <div class="reason-form-actions">
+          <button class="btn-confirm">✓</button>
+          <button class="btn-cancel">✗</button>
+        </div>
       </div>
       <!-- 可折叠列表区 -->
       <div class="reason-section" id="section-support">
@@ -50,10 +57,17 @@
       <div class="m3-field"><input id="inp-o" type="number" readonly tabindex="-1" value="0" /></div>
       <button class="btn-add" data-category="oppose">+ Add reason</button>
       <div class="reason-form" id="form-oppose" hidden>
-        <input class="reason-text" type="text" placeholder="Reason…" maxlength="120" />
-        <input class="reason-score" type="number" min="1" placeholder="Score" />
-        <button class="btn-confirm">✓</button>
-        <button class="btn-cancel">✗</button>
+        <div class="reason-input-area">
+          <div class="reason-input-stack">
+            <input class="reason-text" type="text" placeholder="Reason…" maxlength="120" />
+            <input class="reason-score" type="number" min="1" placeholder="Score" />
+          </div>
+          <button class="btn-next" aria-label="Next">→</button>
+        </div>
+        <div class="reason-form-actions">
+          <button class="btn-confirm">✓</button>
+          <button class="btn-cancel">✗</button>
+        </div>
       </div>
       <div class="reason-section" id="section-oppose">
         <button class="reason-toggle" aria-expanded="false">0 reasons ▾</button>
@@ -66,10 +80,17 @@
       <div class="m3-field"><input id="inp-n" type="number" readonly tabindex="-1" value="0" /></div>
       <button class="btn-add" data-category="neutral">+ Add reason</button>
       <div class="reason-form" id="form-neutral" hidden>
-        <input class="reason-text" type="text" placeholder="Reason…" maxlength="120" />
-        <input class="reason-score" type="number" min="1" placeholder="Score" />
-        <button class="btn-confirm">✓</button>
-        <button class="btn-cancel">✗</button>
+        <div class="reason-input-area">
+          <div class="reason-input-stack">
+            <input class="reason-text" type="text" placeholder="Reason…" maxlength="120" />
+            <input class="reason-score" type="number" min="1" placeholder="Score" />
+          </div>
+          <button class="btn-next" aria-label="下一步">→</button>
+        </div>
+        <div class="reason-form-actions">
+          <button class="btn-confirm">✓</button>
+          <button class="btn-cancel">✗</button>
+        </div>
       </div>
       <div class="reason-section" id="section-neutral">
         <button class="reason-toggle" aria-expanded="false">0 reasons ▾</button>

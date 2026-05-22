@@ -57,7 +57,7 @@ function buildSeatPositions(total) {
   return { seats: posList, radius, rows };
 }
 
-// ─── 渲染 Canvas 函数 (稍后修改以适应新的数据源) ───────────────────────────────
+// ─── 渲染 Canvas 函数 ───────────────────────────────────────────────────────
 
 const COLORS = {
   support: '#1A6BBF',
@@ -93,9 +93,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 
-// draw 函数会读取全局 totals 而非直接读 input
 function draw() {
-  // 从 state 计算 totals
   const nS = state.support.reduce((s, e) => s + e.score, 0);
   const nO = state.oppose.reduce((s, e) => s + e.score, 0);
   const nN = state.neutral.reduce((s, e) => s + e.score, 0);
@@ -184,25 +182,21 @@ function draw() {
 
 const STORAGE_KEY = 'pulsecheck-reasons';
 
-// state 结构: { support: [{ id, text, score }], oppose: [], neutral: [] }
 let state = {
   support: [],
   oppose: [],
   neutral: []
 };
 
-// 辅助函数：保存到 localStorage
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-// 辅助函数：从 localStorage 加载
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // 确保数据结构完整
       state.support = parsed.support || [];
       state.oppose  = parsed.oppose  || [];
       state.neutral = parsed.neutral || [];
@@ -210,7 +204,6 @@ function loadState() {
   } catch (_) {}
 }
 
-// 生成短唯一 ID
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
@@ -250,28 +243,28 @@ function deleteReason(category, id) {
 // ─── 内联表单状态 ───────────────────────────────────────────────────────────
 
 let formState = {
-  activeCategory: null,   // 'support' | 'oppose' | 'neutral' | null
-  editingId: null         // 正在编辑的条目 ID，null 表示新增模式
+  activeCategory: null,
+  editingId: null
 };
 
-// 关闭所有打开的表单
 function closeForm() {
   if (formState.activeCategory) {
     const formDiv = document.getElementById(`form-${formState.activeCategory}`);
-    if (formDiv) formDiv.hidden = true;
-    // 清空表单内的值
-    const textInput = formDiv.querySelector('.reason-text');
-    const scoreInput = formDiv.querySelector('.reason-score');
-    if (textInput) textInput.value = '';
-    if (scoreInput) scoreInput.value = '';
+    if (formDiv) {
+      formDiv.hidden = true;
+      const stack = formDiv.querySelector('.reason-input-stack');
+      if (stack) stack.classList.remove('active-score');
+      const textInput = stack?.querySelector('.reason-text');
+      const scoreInput = stack?.querySelector('.reason-score');
+      if (textInput) textInput.value = '';
+      if (scoreInput) scoreInput.value = '';
+    }
     formState.activeCategory = null;
     formState.editingId = null;
   }
 }
 
-// 打开指定分类的表单（新增或编辑）
 function openForm(category, editingId = null, existingText = '', existingScore = '') {
-  // 如果有其他打开的表单，先关闭
   closeForm();
   
   formState.activeCategory = category;
@@ -281,35 +274,36 @@ function openForm(category, editingId = null, existingText = '', existingScore =
   if (!formDiv) return;
   
   formDiv.hidden = false;
-  const textInput = formDiv.querySelector('.reason-text');
-  const scoreInput = formDiv.querySelector('.reason-score');
+  const stack = formDiv.querySelector('.reason-input-stack');
+  const textInput = stack.querySelector('.reason-text');
+  const scoreInput = stack.querySelector('.reason-score');
+  
+  // 确保初始状态是文本模式
+  stack.classList.remove('active-score');
   
   if (editingId) {
-    // 编辑模式：填入现有值
-    if (textInput) textInput.value = existingText;
-    if (scoreInput) scoreInput.value = existingScore;
+    textInput.value = existingText;
+    scoreInput.value = existingScore;
   } else {
-    // 新增模式：清空
-    if (textInput) textInput.value = '';
-    if (scoreInput) scoreInput.value = '';
+    textInput.value = '';
+    scoreInput.value = '';
   }
   
-  // 聚焦文本输入框
-  if (textInput) textInput.focus();
+  // 聚焦到文本输入框
+  textInput.focus();
 }
 
-// 确认表单提交（新增或更新）
 function confirmForm(category) {
   const formDiv = document.getElementById(`form-${category}`);
   if (!formDiv) return;
   
-  const textInput = formDiv.querySelector('.reason-text');
-  const scoreInput = formDiv.querySelector('.reason-score');
+  const stack = formDiv.querySelector('.reason-input-stack');
+  const textInput = stack.querySelector('.reason-text');
+  const scoreInput = stack.querySelector('.reason-score');
   const text = (textInput?.value || '').trim();
   const rawScore = scoreInput?.value || '';
   const score = parseInt(rawScore, 10);
   
-  // 验证
   if (text === '') {
     alert('请输入理由');
     return;
@@ -320,52 +314,63 @@ function confirmForm(category) {
   }
   
   if (formState.editingId) {
-    // 编辑现有条目
     editReason(category, formState.editingId, text, score);
   } else {
-    // 新增
     addReason(category, text, score);
   }
   
   closeForm();
 }
 
-// ─── 渲染 UI：更新输入框数值 + 渲染可折叠列表 + 重绘 Canvas ─────────────────
+// 下一步按钮逻辑：从 reason 切换到 score
+function goToScore(category) {
+  const formDiv = document.getElementById(`form-${category}`);
+  if (!formDiv) return;
+  
+  const stack = formDiv.querySelector('.reason-input-stack');
+  const textInput = stack.querySelector('.reason-text');
+  const text = (textInput?.value || '').trim();
+  
+  if (text === '') {
+    alert('This field is required.');
+    textInput.focus();
+    return;
+  }
+  
+  // 切换到分数输入框
+  stack.classList.add('active-score');
+  const scoreInput = stack.querySelector('.reason-score');
+  if (scoreInput) scoreInput.focus();
+}
+
+// ─── 渲染 UI ────────────────────────────────────────────────────────────────
 
 function renderAll() {
-  // 1. 计算每个分类的总分
   const totalS = state.support.reduce((s, e) => s + e.score, 0);
   const totalO = state.oppose.reduce((s, e) => s + e.score, 0);
   const totalN = state.neutral.reduce((s, e) => s + e.score, 0);
   
-  // 2. 更新只读输入框显示
   inpS.value = totalS;
   inpO.value = totalO;
   inpN.value = totalN;
   
-  // 3. 更新每个分类的折叠列表标题和条目列表
   renderCategoryList('support');
   renderCategoryList('oppose');
   renderCategoryList('neutral');
   
-  // 4. 重绘 hemicycle
   draw();
 }
 
-// 渲染单个分类的可折叠列表
 function renderCategoryList(category) {
   const items = state[category];
-  const totalScore = items.reduce((s, e) => s + e.score, 0);
   const toggleBtn = document.querySelector(`#section-${category} .reason-toggle`);
   const listContainer = document.getElementById(`list-${category}`);
   
   if (!toggleBtn || !listContainer) return;
   
-  // 更新 toggle 按钮文本（显示条目数量）
   const count = items.length;
   toggleBtn.textContent = `${count} reason${count !== 1 ? 's' : ''} ▾`;
   
-  // 生成列表 HTML
   if (items.length === 0) {
     listContainer.innerHTML = '<div style="padding: 6px 0; font-size: 11px; color: var(--outline);">暂无理由</div>';
   } else {
@@ -380,34 +385,27 @@ function renderCategoryList(category) {
     listContainer.innerHTML = html;
   }
   
-  // 重新绑定列表内的按钮事件（委托给父容器也可以，这里直接在渲染后绑定）
   attachListEvents(category);
 }
 
-// 简单的防 XSS 辅助函数
 function escapeHtml(str) {
   return str.replace(/[&<>]/g, function(m) {
     if (m === '&') return '&amp;';
     if (m === '<') return '&lt;';
     if (m === '>') return '&gt;';
     return m;
-  }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-    return c;
   });
 }
 
-// 为列表中的编辑/删除按钮绑定事件
 function attachListEvents(category) {
   const listContainer = document.getElementById(`list-${category}`);
   if (!listContainer) return;
   
-  // 编辑按钮
   listContainer.querySelectorAll('.reason-entry-edit').forEach(btn => {
     btn.removeEventListener('click', handleEditClick);
     btn.addEventListener('click', handleEditClick);
   });
   
-  // 删除按钮
   listContainer.querySelectorAll('.reason-entry-delete').forEach(btn => {
     btn.removeEventListener('click', handleDeleteClick);
     btn.addEventListener('click', handleDeleteClick);
@@ -415,18 +413,25 @@ function attachListEvents(category) {
 }
 
 function handleEditClick(e) {
+  e.stopPropagation();
   const btn = e.currentTarget;
-  const category = btn.dataset.category;
-  const id = btn.dataset.id;
-  const text = btn.dataset.text;
-  const score = parseInt(btn.dataset.score, 10);
-  openForm(category, id, text, score);
+  const category = btn.getAttribute('data-category');
+  const id = btn.getAttribute('data-id');
+  const entry = state[category]?.find(item => item.id === id);
+  if (entry) {
+    openForm(category, id, entry.text, entry.score);
+  } else {
+    const text = btn.getAttribute('data-text');
+    const score = parseInt(btn.getAttribute('data-score'), 10);
+    openForm(category, id, text, score);
+  }
 }
 
 function handleDeleteClick(e) {
+  e.stopPropagation();
   const btn = e.currentTarget;
-  const category = btn.dataset.category;
-  const id = btn.dataset.id;
+  const category = btn.getAttribute('data-category');
+  const id = btn.getAttribute('data-id');
   if (confirm('确定要删除这个理由吗？')) {
     deleteReason(category, id);
   }
@@ -451,46 +456,85 @@ function setupCollapsibleListeners() {
 // ─── 事件监听初始化 ─────────────────────────────────────────────────────────
 
 function initEventListeners() {
-  // "+ Add reason" 按钮
   document.querySelectorAll('.btn-add').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const category = btn.dataset.category;
-      if (category) {
-        openForm(category);
-      }
+      if (category) openForm(category);
     });
   });
   
-  // 每个表单的确认和取消按钮
   ['support', 'oppose', 'neutral'].forEach(cat => {
     const formDiv = document.getElementById(`form-${cat}`);
     if (formDiv) {
       const confirmBtn = formDiv.querySelector('.btn-confirm');
       const cancelBtn = formDiv.querySelector('.btn-cancel');
+      const nextBtn = formDiv.querySelector('.btn-next');
+      
       if (confirmBtn) {
-        confirmBtn.addEventListener('click', () => confirmForm(cat));
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        newConfirmBtn.addEventListener('click', () => confirmForm(cat));
       }
       if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => closeForm());
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        newCancelBtn.addEventListener('click', () => closeForm());
+      }
+      if (nextBtn) {
+        const newNextBtn = nextBtn.cloneNode(true);
+        nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+        newNextBtn.addEventListener('click', () => goToScore(cat));
       }
     }
   });
   
-  // 点击外部关闭表单（可选，轻量实现：监听 document 点击，但要过滤表单内）
+  // 叠加输入框的键盘事件
+  document.querySelectorAll('.reason-input-stack').forEach(stack => {
+    const newStack = stack.cloneNode(true);
+    stack.parentNode.replaceChild(newStack, stack);
+    
+    const textInput = newStack.querySelector('.reason-text');
+    const scoreInput = newStack.querySelector('.reason-score');
+    const form = newStack.closest('.reason-form');
+    const category = form?.id.replace('form-', '');
+    
+    if (textInput) {
+      // 电脑端：按 Enter 切换到分数框
+      textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (category) goToScore(category);
+        }
+      });
+      
+      textInput.addEventListener('focus', () => {
+        if (newStack.classList.contains('active-score')) {
+          newStack.classList.remove('active-score');
+        }
+      });
+    }
+    
+    if (scoreInput) {
+      // 分数框按 Enter 直接确认
+      scoreInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (category) confirmForm(category);
+        }
+      });
+    }
+  });
+  
   document.addEventListener('click', (e) => {
     if (formState.activeCategory) {
       const formDiv = document.getElementById(`form-${formState.activeCategory}`);
       if (formDiv && !formDiv.contains(e.target) && !e.target.closest('.btn-add')) {
-        // 如果点击在表单外且不是“添加”按钮，关闭表单
         closeForm();
       }
     }
   });
   
-  // 窗口尺寸变化时重绘 canvas
-  window.addEventListener('resize', () => {
-    draw();
-  });
+  window.addEventListener('resize', () => draw());
 }
 
 // ─── 启动应用 ─────────────────────────────────────────────────────────────
@@ -500,7 +544,6 @@ function init() {
   renderAll();
   setupCollapsibleListeners();
   initEventListeners();
-  // 初始将所有折叠区置为关闭状态（class 无 open，max-height 0）
   document.querySelectorAll('.reason-section').forEach(section => {
     section.classList.remove('open');
     const toggle = section.querySelector('.reason-toggle');
